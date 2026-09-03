@@ -27,9 +27,9 @@ def mock_heavy_dependencies(monkeypatch):
     Automatically mocks out Archicad connections
     so these tests can run safely on headless runner environments.
     """
-    # Mock MultiConn so it doesn't try to scan local OS processes
     fake_multi_conn = MagicMock()
     fake_multi_conn.active = {}
+    fake_multi_conn.open_port_headers = {}
     monkeypatch.setattr("tapir_archicad_mcp.app.MultiConn", lambda: fake_multi_conn)
 
 
@@ -46,7 +46,7 @@ async def test_tool_execution_in_memory():
 
         # Execute a tool (hits our mock_heavy_dependencies fixture)
         result = await client.call_tool("discovery_list_active_archicads")
-        assert result.structured_content == {"active": [], "unavailable": []}
+        assert result.structured_content == {"activeInstances": [], "unavailableInstances": []}
 
 
 @pytest.mark.asyncio
@@ -87,7 +87,7 @@ async def test_live_tool_call_over_sse():
                 # Verify that we successfully received a response matching our mocked state
                 assert result.isError is False
                 payload = json.loads(result.content[0].text)
-                assert payload == {"active": [], "unavailable": []}
+                assert payload == {"activeInstances": [], "unavailableInstances": []}
     finally:
         # Cleanly signal the Uvicorn server to shutdown and wait for the task to exit
         server.should_exit = True
